@@ -42,7 +42,7 @@ def build_model():
     - GlobalAveragePooling2D
     - Dense(128, relu)
     - Dropout(0.2)
-    - Dense(3, softmax)
+    - Dense(4, softmax)
     """
     # Base model
     base_model = MobileNetV2(
@@ -60,7 +60,7 @@ def build_model():
     x = layers.GlobalAveragePooling2D(name='global_average_pooling2d_1')(x)
     x = layers.Dense(128, activation='relu', name='dense_2')(x)
     x = layers.Dropout(0.2, name='dropout_1')(x)
-    outputs = layers.Dense(3, activation='softmax', name='dense_3')(x)
+    outputs = layers.Dense(4, activation='softmax', name='dense_3')(x)
     
     model = Model(inputs=inputs, outputs=outputs)
     return model

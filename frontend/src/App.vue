@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import ImageUploader from './components/ImageUploader.vue'
-import ResultCard from './components/ResultCard.vue'
 
 interface PredictionResult {
   class_name: string
@@ -16,6 +14,7 @@ const result = ref<PredictionResult | null>(null)
 const isLoading = ref(false)
 const error = ref<string | null>(null)
 const uploadedImage = ref<string | null>(null)
+const isDragover = ref(false)
 
 const handleImageUploaded = async (file: File) => {
   isLoading.value = true
@@ -45,7 +44,7 @@ const handleImageUploaded = async (file: File) => {
     
     result.value = await response.json()
   } catch (err) {
-    error.value = 'Failed to classify image. Make sure the Python server is running.'
+    error.value = 'Gagal mengklasifikasi gambar. Pastikan server Python sudah berjalan.'
     console.error(err)
   } finally {
     isLoading.value = false
@@ -58,12 +57,42 @@ const resetUpload = () => {
   error.value = null
 }
 
+const handleFileSelect = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  if (target.files && target.files[0]) {
+    handleImageUploaded(target.files[0])
+  }
+}
+
+const handleDrop = (event: DragEvent) => {
+  event.preventDefault()
+  isDragover.value = false
+  if (event.dataTransfer?.files && event.dataTransfer.files[0]) {
+    handleImageUploaded(event.dataTransfer.files[0])
+  }
+}
+
+const handleDragOver = (event: DragEvent) => {
+  event.preventDefault()
+  isDragover.value = true
+}
+
+const handleDragLeave = () => {
+  isDragover.value = false
+}
+
+const triggerFileInput = () => {
+  const input = document.getElementById('fileInput') as HTMLInputElement
+  input?.click()
+}
+
 const getClassEmoji = computed(() => {
   if (!result.value) return '🔍'
   switch (result.value.class_name) {
     case 'Lebah': return '🐝'
     case 'Tawon': return '🐝'
-    case 'Lainnya': return '❓'
+    case 'Lainnya': return '🦗'
+    case 'Bukan_Serangga': return '❌'
     default: return '🔍'
   }
 })
@@ -71,144 +100,143 @@ const getClassEmoji = computed(() => {
 const getClassLabel = computed(() => {
   if (!result.value) return ''
   switch (result.value.class_name) {
-    case 'Lebah': return 'Bee'
-    case 'Tawon': return 'Wasp'
-    case 'Lainnya': return 'Other'
+    case 'Lebah': return 'Lebah'
+    case 'Tawon': return 'Tawon'
+    case 'Lainnya': return 'Serangga Lainnya'
+    case 'Bukan_Serangga': return 'Bukan Serangga'
     default: return result.value.class_name
   }
 })
+
+const formatPercent = (value: number) => {
+  return (value * 100).toFixed(1) + '%'
+}
 </script>
 
 <template>
-  <div class="min-h-screen relative overflow-hidden">
-    <!-- Background decorations -->
-    <div class="absolute inset-0 pointer-events-none">
-      <div class="absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-float"></div>
-      <div class="absolute bottom-20 right-10 w-96 h-96 bg-bee-yellow/10 rounded-full blur-3xl animate-float" style="animation-delay: -3s;"></div>
-      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-wasp-red/5 rounded-full blur-3xl"></div>
-    </div>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <h1>🐝 Klasifikasi Lebah & Tawon</h1>
+      <p>Upload gambar untuk mengidentifikasi jenis serangga</p>
+    </header>
 
     <!-- Main Content -->
-    <div class="relative z-10 container mx-auto px-4 py-8 md:py-16">
-      <!-- Header -->
-      <header class="text-center mb-12">
-        <div class="inline-flex items-center gap-4 mb-4">
-          <span class="text-5xl md:text-6xl animate-float">🐝</span>
-          <h1 class="text-4xl md:text-6xl font-bold gradient-text">
-            Bee vs Wasp
-          </h1>
-          <span class="text-5xl md:text-6xl animate-float" style="animation-delay: -1.5s;">🐝</span>
-        </div>
-        <p class="text-text-secondary text-lg md:text-xl max-w-2xl mx-auto">
-          Upload an image to identify whether it's a <span class="text-bee-yellow font-semibold">Bee</span>, 
-          a <span class="text-wasp-red font-semibold">Wasp</span>, or something else entirely!
-        </p>
-      </header>
-
-      <!-- Main Card -->
-      <div class="max-w-4xl mx-auto">
-        <div class="glass-card p-6 md:p-10">
-          <div class="grid md:grid-cols-2 gap-8">
-            <!-- Upload Section -->
-            <div class="space-y-6">
-              <h2 class="text-xl font-semibold flex items-center gap-2">
-                <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                Upload Image
-              </h2>
-              
-              <ImageUploader 
-                @image-uploaded="handleImageUploaded" 
-                :disabled="isLoading"
-              />
-              
-              <!-- Preview -->
-              <div v-if="uploadedImage" class="relative group">
-                <img 
-                  :src="uploadedImage" 
-                  alt="Uploaded preview" 
-                  class="w-full h-48 object-cover rounded-xl border border-white/10"
-                />
-                <button 
-                  @click="resetUpload"
-                  class="absolute top-2 right-2 p-2 bg-red-500/80 hover:bg-red-500 rounded-full transition-all opacity-0 group-hover:opacity-100"
-                >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <!-- Result Section -->
-            <div class="space-y-6">
-              <h2 class="text-xl font-semibold flex items-center gap-2">
-                <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Classification Result
-              </h2>
-
-              <!-- Loading State -->
-              <div v-if="isLoading" class="flex flex-col items-center justify-center h-64 space-y-4">
-                <div class="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-                <p class="text-text-secondary animate-pulse">Analyzing image...</p>
-              </div>
-
-              <!-- Error State -->
-              <div v-else-if="error" class="bg-red-500/10 border border-red-500/30 rounded-xl p-6 text-center">
-                <span class="text-4xl mb-4 block">⚠️</span>
-                <p class="text-red-400">{{ error }}</p>
-                <button 
-                  @click="resetUpload"
-                  class="mt-4 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg transition-colors"
-                >
-                  Try Again
-                </button>
-              </div>
-
-              <!-- Result -->
-              <ResultCard 
-                v-else-if="result" 
-                :result="result" 
-                :emoji="getClassEmoji" 
-                :label="getClassLabel"
-              />
-
-              <!-- Empty State -->
-              <div v-else class="flex flex-col items-center justify-center h-64 text-text-secondary">
-                <span class="text-6xl mb-4 opacity-50">🔍</span>
-                <p>Upload an image to see results</p>
-              </div>
-            </div>
-          </div>
+    <div class="main-grid">
+      <!-- Upload Section -->
+      <div class="card">
+        <h3 class="card-title">📷 Upload Gambar</h3>
+        
+        <div 
+          v-if="!uploadedImage"
+          class="upload-area"
+          :class="{ dragover: isDragover }"
+          @click="triggerFileInput"
+          @drop="handleDrop"
+          @dragover="handleDragOver"
+          @dragleave="handleDragLeave"
+        >
+          <div class="upload-icon">📁</div>
+          <p class="upload-text">
+            Drag & drop gambar di sini<br>
+            atau <span>klik untuk memilih</span>
+          </p>
+          <input 
+            type="file" 
+            id="fileInput"
+            class="file-input"
+            accept="image/*"
+            @change="handleFileSelect"
+          >
         </div>
 
-        <!-- Info Cards -->
-        <div class="grid md:grid-cols-3 gap-6 mt-8">
-          <div class="glass-card p-6 text-center hover:scale-105 transition-transform duration-300">
-            <span class="text-4xl mb-3 block">🐝</span>
-            <h3 class="font-semibold text-bee-yellow mb-2">Lebah (Bee)</h3>
-            <p class="text-sm text-text-secondary">Friendly pollinators with fuzzy bodies and rounded features</p>
-          </div>
-          <div class="glass-card p-6 text-center hover:scale-105 transition-transform duration-300">
-            <span class="text-4xl mb-3 block">🐝</span>
-            <h3 class="font-semibold text-wasp-red mb-2">Tawon (Wasp)</h3>
-            <p class="text-sm text-text-secondary">Sleek predators with narrow waists and smooth bodies</p>
-          </div>
-          <div class="glass-card p-6 text-center hover:scale-105 transition-transform duration-300">
-            <span class="text-4xl mb-3 block">❓</span>
-            <h3 class="font-semibold text-forest-green mb-2">Lainnya (Other)</h3>
-            <p class="text-sm text-text-secondary">Neither a bee nor a wasp - could be any other insect!</p>
-          </div>
+        <!-- Preview -->
+        <div v-else class="preview-container">
+          <img :src="uploadedImage" alt="Preview" class="preview-image">
+          <button @click="resetUpload" class="reset-btn">🔄 Upload Gambar Lain</button>
         </div>
       </div>
 
-      <!-- Footer -->
-      <footer class="text-center mt-16 text-text-secondary text-sm">
-        <p>Powered by Deep Learning • Built with Vue.js & TailwindCSS</p>
-      </footer>
+      <!-- Result Section -->
+      <div class="card">
+        <h3 class="card-title">📊 Hasil Klasifikasi</h3>
+
+        <!-- Loading -->
+        <div v-if="isLoading" class="loading">
+          <div class="spinner"></div>
+          <p>Menganalisis gambar...</p>
+        </div>
+
+        <!-- Error -->
+        <div v-else-if="error" class="error-box">
+          <div class="error-icon">⚠️</div>
+          <p>{{ error }}</p>
+          <button @click="resetUpload" class="retry-btn">Coba Lagi</button>
+        </div>
+
+        <!-- Result -->
+        <div v-else-if="result" class="result-box">
+          <div class="result-emoji">{{ getClassEmoji }}</div>
+          <div class="result-class">{{ getClassLabel }}</div>
+          <div class="result-confidence">
+            Kepercayaan: {{ formatPercent(result.confidence) }}
+          </div>
+          <div class="confidence-bar">
+            <div 
+              class="confidence-fill" 
+              :style="{ width: formatPercent(result.confidence) }"
+            ></div>
+          </div>
+
+          <!-- All Predictions -->
+          <div class="all-predictions">
+            <h4>Semua Prediksi:</h4>
+            <div 
+              v-for="pred in result.all_predictions" 
+              :key="pred.class_name"
+              class="prediction-item"
+            >
+              <span class="prediction-name">{{ pred.class_name.replace('_', ' ') }}</span>
+              <span class="prediction-percent">{{ formatPercent(pred.confidence) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div v-else class="empty-state">
+          <div class="empty-icon">🔍</div>
+          <p>Upload gambar untuk melihat hasil</p>
+        </div>
+      </div>
     </div>
+
+    <!-- Info Cards -->
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="info-emoji">🐝</div>
+        <div class="info-title">Lebah</div>
+        <div class="info-desc">Penyerbuk dengan tubuh berbulu</div>
+      </div>
+      <div class="info-card">
+        <div class="info-emoji">🐝</div>
+        <div class="info-title">Tawon</div>
+        <div class="info-desc">Predator dengan pinggang ramping</div>
+      </div>
+      <div class="info-card">
+        <div class="info-emoji">🦗</div>
+        <div class="info-title">Serangga Lainnya</div>
+        <div class="info-desc">Bukan lebah atau tawon</div>
+      </div>
+      <div class="info-card">
+        <div class="info-emoji">❌</div>
+        <div class="info-title">Bukan Serangga</div>
+        <div class="info-desc">Objek selain serangga</div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>Klasifikasi menggunakan Deep Learning</p>
+    </footer>
   </div>
 </template>
