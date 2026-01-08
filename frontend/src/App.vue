@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 
 // API URL - uses Railway backend in production, proxy in development
 const API_URL = import.meta.env.PROD 
-  ? 'https://bee-or-wasp-production.up.railway.app' 
+  ? 'https://bee-or-wasp-1jeo.onrender.com' 
   : ''
 
 interface PredictionResult {
