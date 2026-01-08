@@ -1,0 +1,15 @@
+# Render Blueprint - Bee vs Wasp Classifier API
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: bee-or-wasp-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: TF_CPP_MIN_LOG_LEVEL
+        value: "2"
