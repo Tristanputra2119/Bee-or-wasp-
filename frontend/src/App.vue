@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 
+// API URL - uses Railway backend in production, proxy in development
+const API_URL = import.meta.env.PROD 
+  ? 'https://bee-or-wasp-production.up.railway.app' 
+  : ''
+
 interface PredictionResult {
   class_name: string
   confidence: number
@@ -33,7 +38,7 @@ const handleImageUploaded = async (file: File) => {
   formData.append('file', file)
   
   try {
-    const response = await fetch('/api/predict', {
+    const response = await fetch(`${API_URL}/api/predict`, {
       method: 'POST',
       body: formData
     })
