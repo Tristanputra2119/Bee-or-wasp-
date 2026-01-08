@@ -1,0 +1,18 @@
+# Bee vs Wasp Classifier API - Railway Deployment
+# Python 3.11 compatible
+
+# Web Framework
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+python-multipart>=0.0.6
+
+# ML/AI
+tensorflow>=2.15.0
+keras>=3.0.0
+
+# Image Processing
+pillow>=10.2.0
+numpy>=1.26.0
+
+# HTTP client (for health checks)
+httpx>=0.26.0

@@ -28,8 +28,22 @@ from keras.applications.mobilenet_v2 import MobileNetV2, preprocess_input
 from keras import layers, Model
 
 # === Configuration ===
-MODEL_PATH = Path(__file__).parent.parent / "model" / "model_serangga.keras"
-CLASS_INDICES_PATH = Path(__file__).parent.parent / "model" / "class_indices.json"
+# Check for Railway/Docker environment first, then fall back to local development path
+def get_model_paths():
+    """Get model paths based on environment (Docker or local dev)"""
+    # Docker/Railway path (model copied to /app/model/)
+    docker_model = Path("/app/model/model_serangga.keras")
+    docker_indices = Path("/app/model/class_indices.json")
+    
+    # Local development path
+    local_model = Path(__file__).parent.parent / "model" / "model_serangga.keras"
+    local_indices = Path(__file__).parent.parent / "model" / "class_indices.json"
+    
+    if docker_model.exists():
+        return docker_model, docker_indices
+    return local_model, local_indices
+
+MODEL_PATH, CLASS_INDICES_PATH = get_model_paths()
 IMG_SIZE = (224, 224)
 
 # === Build Model Architecture ===

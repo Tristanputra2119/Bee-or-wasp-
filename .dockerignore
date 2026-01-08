@@ -1,0 +1,49 @@
+# Docker ignore file for faster builds
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Flutter app (not needed for backend)
+flutter_app/
+
+# Frontend (deploy separately)
+frontend/
+
+# Local files
+*.log
+.env.local
+.env.development
+
+# Conda
+*.yml
+!railway.toml
+
+# Other
+*.md
+backend/model_config.txt
+backend/inspect_model.py
+backend/environment.yml
